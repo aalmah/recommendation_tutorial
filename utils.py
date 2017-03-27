@@ -10,3 +10,8 @@ def normal(shape, mean=0., stdv=0.01):
 
 def l2_norm(X):
     return T.sum(T.sqr(X))
+
+def dump_params(saveto, eidx, name, params):
+    print "saving %s at epoch %d..." % (name, eidx)
+    np.savez("%s/%s" % (saveto, name), epoch_idx=eidx, **params)
+

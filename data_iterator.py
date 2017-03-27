@@ -41,8 +41,9 @@ class MultiFixDimIterator(object):
         idx = self.batch_idx * self.batch_size
         chosen_indices = self.data_indices[idx:idx+self.batch_size]
         self.batch_idx += 1
-
-        return tuple(data[chosen_indices] for data in self.data)
+        
+        batch = tuple(data[chosen_indices] for data in self.data)
+        return batch
     
 if __name__ == "__main__":
     import cPickle as pkl

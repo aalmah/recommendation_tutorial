@@ -42,8 +42,8 @@ def generate_data_list(data_path):
             user_id = len(user_dict)
             user_dict[e["review/userId"]] = user_id
         row = []
-        row.append(product_dict[e["product/productId"]])
-        row.append(user_dict[e["review/userId"]])
+        row.append(user_id)
+        row.append(product_id)
         row.append(e["review/text"])
         row.append(float(e["review/score"]))
         data.append(row)
@@ -76,7 +76,7 @@ def tokenize(sentences):
 
 
 def build_dict(train_data, max_n):
-    products, users, sentences, labels = zip(*train_data)
+    users, products, sentences, labels = zip(*train_data)
     sentences = tokenize(sentences)
     if VERBOSE:
         print 'Building dictionary..',
@@ -105,7 +105,7 @@ def sort_data(data):
 
 
 def preprocess_data(data, dictionary, sort=False):
-    products, users, sentences, labels = zip(*data)
+    users, products, sentences, labels = zip(*data)
     sentences_tok = tokenize(sentences)
     assert len(sentences_tok) == len(sentences)
 
@@ -120,7 +120,7 @@ def preprocess_data(data, dictionary, sort=False):
 
     if sort:
         seqs = sort_data(seqs)
-    return (products, users, seqs, labels)
+    return (users, products, seqs, labels)
 
 
 def main(category, data_path, vocab_size):
@@ -178,7 +178,7 @@ if __name__ == "__main__":
                         default='arts', help='product category')
     parser.add_argument('-p', '--path', type=str,
                         default='data', help='path to data')
-    parser.add_argument('-v', '--vocab_size', type=int, default=15000,
+    parser.add_argument('-v', '--vocab_size', type=int, default=5000,
                         help='size of vocabulary of reviews')
     args = parser.parse_args()
     
