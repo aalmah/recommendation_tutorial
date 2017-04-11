@@ -49,7 +49,7 @@ def build_model(options, params):
     return users_id, items_id, y, y_hat, mse, cost
 
 
-def prepare_data(raw_data):
+def prepare_full_data(raw_data):
     """Returns numpy ndarrays of user ids, item ids and ratings from raw_data"""
     users_id = np.asarray(raw_data[0], dtype='int32')
     items_id = np.asarray(raw_data[1], dtype='int32')
@@ -62,9 +62,9 @@ def load_data(data_path):
         data_dict = pkl.load(f)
     n_users = data_dict['n_users']
     n_items = data_dict['n_products']
-    train_data = prepare_data(data_dict["train"])
-    valid_data = prepare_data(data_dict["valid"])
-    test_data = prepare_data(data_dict["test"])
+    train_data = prepare_full_data(data_dict["train"])
+    valid_data = prepare_full_data(data_dict["valid"])
+    test_data  = prepare_full_data(data_dict["test"])
     del data_dict
     return n_users, n_items, train_data, valid_data, test_data
 
