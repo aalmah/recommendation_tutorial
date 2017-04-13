@@ -92,7 +92,7 @@ def build_dict(train_data, max_n):
     keys = wordcount.keys()
     sorted_idx = np.argsort(counts)[::-1]
     worddict = dict()
-    for idx, ss in enumerate(sorted_idx[:max_n]):
+    for idx, ss in enumerate(sorted_idx[:max_n-2]):
         worddict[keys[ss]] = idx + 2  # leave 0 and 1 (UNK)
     if VERBOSE:
         print '# words: {}, # unique words: {}'.format(np.sum(counts), len(keys))
@@ -127,7 +127,7 @@ def main(category, data_path, vocab_size):
 
     t1 = time.time()
     np.random.seed(12345)
-    
+
     if not os.path.exists(data_path):
         os.makedirs(data_path)
     fname = '{}.txt.gz'.format(category.title())
@@ -147,7 +147,7 @@ def main(category, data_path, vocab_size):
         print "# data: {}, # users: {}, # products: {}".format(len(data), n_users, n_products)
 
     train_data, valid_data, test_data = split_data(data)
-    
+
     dictionary = build_dict(train_data, vocab_size)
     train_data = preprocess_data(train_data, dictionary)
     valid_data = preprocess_data(valid_data, dictionary)
@@ -156,6 +156,7 @@ def main(category, data_path, vocab_size):
         print "# train:", len(train_data[0])
         print "# valid:", len(valid_data[0])
         print "# test:", len(test_data[0])
+        print "vocab_size:", len(dictionary)
     with open(os.path.join(data_path, '%s.pkl' % category), 'wb') as f:
         pkl.dump({"train": train_data,
                   "valid": valid_data,
@@ -181,5 +182,5 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--vocab_size', type=int, default=5000,
                         help='size of vocabulary of reviews')
     args = parser.parse_args()
-    
+
     main(args.category, args.path, args.vocab_size)
