@@ -1,9 +1,9 @@
+"""Code for Matrix Factorization model for recommendation"""
 import numpy as np
 import theano
 import theano.tensor as T
 from collections import OrderedDict
-from utils import sharedX, normal, l2_norm, dump_params
-from lasagne.updates import rmsprop, apply_momentum, sgd
+from utils import sharedX, normal, l2_norm, sgd, dump_params
 from data_iterator import MultiFixDimIterator
 import cPickle as pkl
 import argparse
@@ -82,8 +82,7 @@ def train(options, train_data, valid_data, test_data):
     print 'Computing gradients...'
     lrt = sharedX(options['lr'])
     grads = T.grad(cost, params.values())
-    updates = sgd(grads, params.values(), lrt)
-    updates = apply_momentum(updates, params.values(), momentum=options['momentum'])
+    updates = sgd(params.values(), grads, lrt)
 
     print 'Compiling theano functions...'
     eval_fn = theano.function([users_id, items_id, y], mse)
@@ -95,7 +94,8 @@ def train(options, train_data, valid_data, test_data):
                                      shuffle=True)
     valid_iter = MultiFixDimIterator(*valid_data, batch_size=100)
     test_iter  = MultiFixDimIterator(*test_data,  batch_size=100)
-    best_valid = None
+    best_valid = float('inf')
+    best_test  = float('inf')
 
     n_batches = np.ceil(train_data[0].shape[0]*1./options['batch_size']).astype('int')
     disp_str = ['COST', 'Train MSE', 'Valid MSE', 'Test MSE']
@@ -108,17 +108,24 @@ def train(options, train_data, valid_data, test_data):
             accum_mse  += b_mse
 
         disp_val = [val/n_batches for val in [accum_cost, accum_mse]]
-        disp_val += [np.mean([eval_fn(*batch) for batch in valid_iter]),
-                     np.mean([eval_fn(*batch) for batch in test_iter])]
-        if best_valid is None or best_valid > disp_val[0]:
-            best_valid = disp_val[0]
-            dump_params(options['saveto'], eidx, "best_params", params)
-
         res_str = ('[%d] ' % eidx) + ", ".join("%s: %.4f" %(s,v) for s,v in
                                                zip(disp_str, disp_val))
         print res_str
 
-    print "Done"
+        if (eidx+1) % options['valid_freq'] == 0:
+            disp_val = [np.mean([eval_fn(*batch) for batch in valid_iter]),
+                        np.mean([eval_fn(*batch) for batch in test_iter])]
+            res_str = ", ".join("%s: %.4f" %(s,v) for s,v in
+                                zip(['Valid MSE', 'Test MSE'], disp_val))
+            print res_str
+
+            if best_valid > disp_val[0]:
+                best_valid, best_test = disp_val
+                dump_params(options['saveto'], eidx, "best_params", params)
+
+    print "Done training..."
+    print "Best Valid MSE: %.4f and Test MSE: %.4f" % best_test
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -128,9 +135,9 @@ if __name__ == "__main__":
     parser.add_argument('--l2_coeff', type=float, default=0.0, help='weight decay coefficient')
     parser.add_argument('--batch_size', type=int, default=128, help='size of training batch')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-    parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
     parser.add_argument('--n_epochs', type=int, default=200, help='number of training epochs')
-    parser.add_argument('--saveto', type=str, default="svd_model", help='path to save best model')
+    parser.add_argument('--valid_freq', type=int, default=2, help='validation frequency (in epochs)')
+    parser.add_argument('--saveto', type=str, default="mf_model", help='path to save best model')
     options = vars(parser.parse_args())
 
     print "Loading data..."
